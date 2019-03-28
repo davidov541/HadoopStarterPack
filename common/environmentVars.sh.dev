@@ -1,0 +1,8 @@
+#!/bin/sh
+
+ENV="dev"
+NAMENODE="bdedev"
+CONNECTIONSTRING="jdbc:hive2://master.davidmcginnis.net:2181,worker1.davidmcginnis.net:2181,worker2.davidmcginnis.net:2181/"
+OOZIEHOST=master.davidmcginnis.net
+SOLRHOSTS=worker1.davidmcginnis.net,worker2.davidmcginnis.net
+RESOURCEMANAGER=master.davidmcginnis.net

@@ -1,0 +1,64 @@
+<workflow-app xmlns="uri:oozie:workflow:0.4" name="Application-RegressionTests-AdHoc-${user}-${env}-wf">
+	<start to="test_fork"/>
+	<fork name="test_fork">
+		<path start="module1_tests" />
+	</fork>
+	<action name="module1_tests">
+		<shell xmlns="uri:oozie:shell-action:0.2">
+			<job-tracker>${jobTracker}</job-tracker>
+			<name-node>${nameNode}</name-node>
+                        <configuration>
+                                <property>
+                                        <name>mapred.job.queue.name</name>
+                                        <value>batch</value>
+                                </property>
+                        </configuration>
+			<exec>runRemoteTests.sh</exec>
+			<argument>ConsumerAffairs</argument>
+			<argument>${useSandbox}</argument>
+			<argument>${user}</argument>
+			<file>${projectsRoot}/test/scripts/runRemoteTests.sh</file>
+			<file>${keytab}</file>
+		</shell>
+                <ok to="test_join" />
+                <error to="test_join" />
+	</action>
+	<join name="test_join" to="cleanup_tests" />
+	<action name="cleanup_tests">
+                <shell xmlns="uri:oozie:shell-action:0.2">
+                        <job-tracker>${jobTracker}</job-tracker>
+                        <name-node>${nameNode}</name-node>
+                        <configuration>
+                                <property>
+                                        <name>mapred.job.queue.name</name>
+                                        <value>batch</value>
+                                </property>
+                        </configuration>
+                        <exec>cleanupRegressionTests.sh</exec>
+                        <argument>${useSandbox}</argument>
+			<argument>${user}</argument>
+		        <file>${projectsRoot}/test/scripts/cleanupRegressionTests.sh</file>
+                	<file>${keytab}</file>
+			<capture-output />
+		</shell>
+                <ok to="success_email" />
+                <error to="success_email" />
+        </action>
+	<action name="success_email">
+		<email xmlns="uri:oozie:email-action:0.2">
+			<to>${email}</to>
+			<subject>[${env}]: SUCCESS Regression Tests Have Finished</subject>
+			<body>${wf:name()} instance ${wf:id()} ran successfully.
+				Thanks,
+				Oozie
+			</body>
+			<attachment>${wf:actionData('cleanup_tests')['resultsPath']}</attachment>
+		</email>
+		<ok to="end"/>
+		<error to="fail"/>
+	</action>
+	<kill name="fail">
+		<message>Oozie action failed, error message[${wf:errorMessage(wf:lastErrorNode())}]</message>
+	</kill>
+	<end name="end"/>
+</workflow-app>
